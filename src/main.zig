@@ -10,7 +10,8 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     // const host = "export.arxiv.org";
-    const req_url = "http://export.arxiv.org/api/query?search_query=au:%22aidan+zabalo%22";
+    // const req_url = "http://export.arxiv.org/api/query?search_query=au:\"aidan+zabalo\"";
+    const req_url = "http://export.arxiv.org/api/query?search_query=cat:cond-mat.dis-nn";
 
     var client = std.http.Client{
         .allocator = allocator,
