@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Entry = struct {
+pub const Entry = struct {
     id: []const u8,
     title: []const u8,
     published: []const u8,
@@ -10,30 +10,7 @@ const Entry = struct {
     summary: []const u8,
 };
 
-const Query = struct {
-    executed: bool = false,
-    allocator: std.mem.Allocator,
-
-    const Self = @This();
-
-    const base_url = "http://export.arxiv.org/api/query";
-
-    pub fn init(self: *Self, allocator: std.mem.Allocator) void {
-        self.allocator = allocator;
-    }
-
-    pub fn buildQuery(self: *Self, query: *std.ArrayList(u8), method_types: []const MethodType) !void {
-        try query.appendSlice(self.base_url);
-        for (method_types) |mt| {
-            try query.append('?');
-            try query.appendSlice(mt.toString());
-        }
-        // search_query=ti:"electron thermal conductivity"&sortBy=lastUpdatedDate&sortOrder=ascending
-
-    }
-};
-
-const SearchField = enum {
+pub const SearchField = enum {
     Title,
     Author,
     Abstract,
@@ -48,20 +25,20 @@ const SearchField = enum {
 
     pub fn toString(self: Self) []const u8 {
         return switch (self) {
-            .Title => "ti",
-            .Author => "au",
-            .Abstract => "abs",
-            .Comment => "co",
-            .JournalReference => "jr",
-            .SubjectCategory => "cat",
-            .ReportNumber => "rn",
-            .Id => "id",
-            .All => "all",
+            .Title => "ti:",
+            .Author => "au:",
+            .Abstract => "abs:",
+            .Comment => "co:",
+            .JournalReference => "jr:",
+            .SubjectCategory => "cat:",
+            .ReportNumber => "rn:",
+            .Id => "id:",
+            .All => "all:",
         };
     }
 };
 
-const BoolOp = enum {
+pub const BoolOp = enum {
     And,
     Or,
     Andnot,
@@ -77,7 +54,7 @@ const BoolOp = enum {
     }
 };
 
-const SortBy = enum {
+pub const SortBy = enum {
     Relevance,
     LastUpdatedDate,
     SubmittedDate,
@@ -86,14 +63,14 @@ const SortBy = enum {
 
     pub fn toString(self: Self) []const u8 {
         return switch (self) {
-            .Relevance => "relevance",
-            .LastUpdatedDate => "lastUpdatedDate",
-            .SubmittedDate => "submittedDate",
+            .Relevance => "&sortBy=relevance",
+            .LastUpdatedDate => "&sortBy=lastUpdatedDate",
+            .SubmittedDate => "&sortBy=submittedDate",
         };
     }
 };
 
-const SortOrder = enum {
+pub const SortOrder = enum {
     Ascending,
     Descending,
 
@@ -101,8 +78,8 @@ const SortOrder = enum {
 
     pub fn toString(self: Self) []const u8 {
         return switch (self) {
-            .Ascending => "ascending",
-            .Descending => "descending",
+            .Ascending => "&sortOrder=ascending",
+            .Descending => "&sortOrder=descending",
         };
     }
 };
@@ -117,82 +94,112 @@ const MethodType = enum {
 
     pub fn toString(self: Self) []const u8 {
         return switch (self) {
-            .SearchQuery => "search_query",
-            .IdList => "id_list",
-            .Start => "start",
-            .MaxResults => "max_results",
+            .SearchQuery => "search_query=",
+            .IdList => "id_list=",
+            .Start => "start=",
+            .MaxResults => "max_results=",
         };
     }
 };
 
+pub fn buildQuery(
+    allocator: std.mem.Allocator,
+    method_type: MethodType,
+    field: SearchField,
+    field_value: []const u8,
+    sort_by: SortBy,
+    sort_order: SortOrder,
+) ![]const u8 {
+    const base_url = "http://export.arxiv.org/api/query?";
+
+    const url = try std.fmt.allocPrint(allocator, "{s}{s}{s}{s}{s}{s}", .{
+        base_url,
+        method_type.toString(),
+        field.toString(),
+        field_value,
+        sort_by.toString(),
+        sort_order.toString(),
+    });
+
+    return url;
+}
+
 test "SearchField toString" {
     var sf = SearchField.Title;
-    try std.testing.expectEqualStrings("ti", sf.toString());
+    try std.testing.expectEqualStrings("ti:", sf.toString());
 
     sf = SearchField.Author;
-    try std.testing.expectEqualStrings("au", sf.toString());
+    try std.testing.expectEqualStrings("au:", sf.toString());
 
     sf = SearchField.Abstract;
-    try std.testing.expectEqualStrings("abs", sf.toString());
+    try std.testing.expectEqualStrings("abs:", sf.toString());
 
     sf = SearchField.Comment;
-    try std.testing.expectEqualStrings("co", sf.toString());
+    try std.testing.expectEqualStrings("co:", sf.toString());
 
     sf = SearchField.JournalReference;
-    try std.testing.expectEqualStrings("jr", sf.toString());
+    try std.testing.expectEqualStrings("jr:", sf.toString());
 
     sf = SearchField.SubjectCategory;
-    try std.testing.expectEqualStrings("cat", sf.toString());
+    try std.testing.expectEqualStrings("cat:", sf.toString());
 
     sf = SearchField.ReportNumber;
-    try std.testing.expectEqualStrings("rn", sf.toString());
+    try std.testing.expectEqualStrings("rn:", sf.toString());
 
     sf = SearchField.Id;
-    try std.testing.expectEqualStrings("id", sf.toString());
+    try std.testing.expectEqualStrings("id:", sf.toString());
 
     sf = SearchField.All;
-    try std.testing.expectEqualStrings("all", sf.toString());
+    try std.testing.expectEqualStrings("all:", sf.toString());
 }
 
 test "SortOrder toString" {
     var so = SortOrder.Ascending;
-    try std.testing.expectEqualStrings("ascending", so.toString());
+    try std.testing.expectEqualStrings("&sortOrder=ascending", so.toString());
 
     so = SortOrder.Descending;
-    try std.testing.expectEqualStrings("descending", so.toString());
+    try std.testing.expectEqualStrings("&sortOrder=descending", so.toString());
 }
 
 test "SortBy toString" {
     var sb = SortBy.Relevance;
-    try std.testing.expectEqualStrings("relevance", sb.toString());
+    try std.testing.expectEqualStrings("&sortBy=relevance", sb.toString());
 
     sb = SortBy.LastUpdatedDate;
-    try std.testing.expectEqualStrings("lastUpdatedDate", sb.toString());
+    try std.testing.expectEqualStrings("&sortBy=lastUpdatedDate", sb.toString());
 
     sb = SortBy.SubmittedDate;
-    try std.testing.expectEqualStrings("submittedDate", sb.toString());
+    try std.testing.expectEqualStrings("&sortBy=submittedDate", sb.toString());
 }
 
 test "MethodType toString" {
     var mt = MethodType.SearchQuery;
-    try std.testing.expectEqualStrings("search_query", mt.toString());
+    try std.testing.expectEqualStrings("search_query=", mt.toString());
 
     mt = MethodType.IdList;
-    try std.testing.expectEqualStrings("id_list", mt.toString());
+    try std.testing.expectEqualStrings("id_list=", mt.toString());
 
     mt = MethodType.Start;
-    try std.testing.expectEqualStrings("start", mt.toString());
+    try std.testing.expectEqualStrings("start=", mt.toString());
 
     mt = MethodType.MaxResults;
-    try std.testing.expectEqualStrings("max_results", mt.toString());
+    try std.testing.expectEqualStrings("max_results=", mt.toString());
 }
 
-test "buildQuery" {
+test "buildSearchQuery" {
     const allocator = std.testing.allocator;
-    var query = Query.init(allocator);
-    defer query.deinit();
 
-    const exp_url = "http://export.arxiv.org/api/query?search_query=ti:\"electron thermal conductivity\"&sortBy=lastUpdatedDate&sortOrder=ascending";
+    const exp_url = "http://export.arxiv.org/api/query?search_query=ti:\"electron thermal conductivity\"&sortBy=lastUpdatedDate&sortOrder=descending";
 
-    try std.testing.expectEqualStrings(exp_url, query.items);
+    const url = try buildQuery(
+        allocator,
+        .SearchQuery,
+        .Title,
+        "\"electron thermal conductivity\"",
+        .LastUpdatedDate,
+        .Descending,
+    );
+    defer allocator.free(url);
+
+    try std.testing.expectEqualStrings(exp_url, url);
 }
