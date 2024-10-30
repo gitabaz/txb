@@ -1,5 +1,7 @@
 const std = @import("std");
-const xml = @import("xml.zig");
+const arxiv = @import("arxiv.zig");
+const taxonomy = arxiv.taxonomy;
+const request = @import("request.zig");
 
 pub fn main() !void {
     std.debug.print("Terminal arXiv Browser\n", .{});
@@ -9,35 +11,18 @@ pub fn main() !void {
 
     const allocator = gpa.allocator();
 
-    // const host = "export.arxiv.org";
-    // const req_url = "http://export.arxiv.org/api/query?search_query=au:\"aidan+zabalo\"";
-    const req_url = "http://export.arxiv.org/api/query?search_query=cat:cond-mat.dis-nn";
+    const cat = taxonomy.Physics.archives[1].categories[0].name;
+    const req_url = try arxiv.buildQuery(
+        allocator,
+        .SearchQuery,
+        .SubjectCategory,
+        cat,
+        .SubmittedDate,
+        .Descending,
+    );
+    defer allocator.free(req_url);
+    std.debug.print("req_url: {s}\n", .{req_url});
 
-    var client = std.http.Client{
-        .allocator = allocator,
-    };
-    defer client.deinit();
-
-    var al = std.ArrayList(u8).init(allocator);
-    defer al.deinit();
-
-    const res = try client.fetch(.{
-        .response_storage = .{ .dynamic = &al },
-        .method = .GET,
-        .location = .{ .url = req_url },
-    });
-
-    if (res.status == .ok) {
-        std.debug.print("OK\n", .{});
-    }
-
-    // std.debug.print("{s}\n", .{al.items});
-
-    const doc = try xml.parse(allocator, al.items);
-    defer doc.deinit();
-
-    var entry_it = doc.root.findChildrenByTag("entry");
-    while (entry_it.next()) |c| {
-        std.debug.print("{s}\n", .{c.getCharData("title").?});
-    }
+    std.debug.print("Results from: {s}\n", .{cat});
+    // try request.makeRequest(allocator, req_url);
 }
