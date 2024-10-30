@@ -1,6 +1,7 @@
 const std = @import("std");
 const arxiv = @import("arxiv.zig");
 const taxonomy = arxiv.taxonomy;
+const GroupID = arxiv.taxonomy.GroupID;
 const request = @import("request.zig");
 
 pub fn main() !void {
@@ -11,7 +12,7 @@ pub fn main() !void {
 
     const allocator = gpa.allocator();
 
-    const cat = taxonomy.Physics.archives[1].categories[0].name;
+    const cat = taxonomy.groups[@intFromEnum(GroupID.Physics)].archives[1].categories[0].name;
     const req_url = try arxiv.buildQuery(
         allocator,
         .SearchQuery,
