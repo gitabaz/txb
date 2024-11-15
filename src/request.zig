@@ -1,5 +1,5 @@
 const std = @import("std");
-const xml = @import("xml.zig");
+const xml = @import("./xml.zig");
 
 pub fn makeRequest(allocator: std.mem.Allocator, req_url: []const u8) !void {
     var client = std.http.Client{

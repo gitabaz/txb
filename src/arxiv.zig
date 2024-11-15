@@ -1,5 +1,5 @@
 const std = @import("std");
-pub const taxonomy = @import("taxonomy.zig");
+pub const taxonomy = @import("./taxonomy.zig");
 
 pub const Entry = struct {
     id: []const u8,

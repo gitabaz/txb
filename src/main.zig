@@ -1,8 +1,8 @@
 const std = @import("std");
-const arxiv = @import("arxiv.zig");
+const arxiv = @import("./arxiv.zig");
 const taxonomy = arxiv.taxonomy;
 const GroupID = arxiv.taxonomy.GroupID;
-const request = @import("request.zig");
+const request = @import("./request.zig");
 
 pub fn main() !void {
     std.debug.print("Terminal arXiv Browser\n", .{});
