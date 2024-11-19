@@ -3,6 +3,7 @@ const arxiv = @import("./arxiv.zig");
 const taxonomy = arxiv.taxonomy;
 const GroupID = arxiv.taxonomy.GroupID;
 const request = @import("./request.zig");
+const ui = @import("./ui.zig");
 
 pub fn main() !void {
     std.debug.print("Terminal arXiv Browser\n", .{});
@@ -24,6 +25,8 @@ pub fn main() !void {
     defer allocator.free(req_url);
     std.debug.print("req_url: {s}\n", .{req_url});
 
-    std.debug.print("Results from: {s}\n", .{cat});
+    // std.debug.print("Results from: {s}\n", .{cat});
     // try request.makeRequest(allocator, req_url);
+
+    try ui.loop(allocator);
 }
